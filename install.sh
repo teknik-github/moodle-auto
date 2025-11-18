@@ -24,9 +24,8 @@ sudo apt install libapache2-mod-php8.2
 
 echo "===> Menambahkan repository MariaDB"
 curl -fsSL https://mariadb.org/mariadb_release_signing_key.asc | sudo gpg --dearmor -o /usr/share/keyrings/mariadb-keyring.gpg
-
 echo "deb [signed-by=/usr/share/keyrings/mariadb-keyring.gpg] https://archive.mariadb.org/mariadb-10.11/repo/ubuntu $(lsb_release -cs) main" \
-sudo tee /etc/apt/sources.list.d/mariadb.list
+ |sudo tee /etc/apt/sources.list.d/mariadb.list
 
 echo "===> Install MariaDB"
 apt update && apt install -y mariadb-server
@@ -35,7 +34,7 @@ echo "===> Check mariaDB versions"
 mariadb --version
 
 echo "===> Membuat database untuk Moodle"
-DB_NAME=$(tr -dc 'A-Za-z' </dev/urandom | head -c 10)
+DB_NAME=$(tr -dc 'A-Za-z' </dev/urandom | head -c 5)
 DB_USER=$(tr -dc 'A-Za-z' </dev/urandom | head -c 10)
 DB_PASS=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 10)
 
