@@ -28,7 +28,6 @@ curl -fsSL https://mariadb.org/mariadb_release_signing_key.asc | sudo gpg --dear
 echo "deb [signed-by=/usr/share/keyrings/mariadb-keyring.gpg] https://archive.mariadb.org/mariadb-10.11/repo/ubuntu $(lsb_release -cs) main" \
 sudo tee /etc/apt/sources.list.d/mariadb.list
 
-
 echo "===> Install MariaDB"
 apt update && apt install -y mariadb-server
 
@@ -36,8 +35,8 @@ echo "===> Check mariaDB versions"
 mariadb --version
 
 echo "===> Membuat database untuk Moodle"
-DB_NAME="moodle"
-DB_USER="moodleuser"
+DB_NAME=$(tr -dc 'A-Za-z' </dev/urandom | head -c 10)
+DB_USER=$(tr -dc 'A-Za-z' </dev/urandom | head -c 10)
 DB_PASS=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 10)
 
 mysql -u root <<EOF
