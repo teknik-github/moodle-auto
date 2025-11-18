@@ -23,10 +23,17 @@ echo "===> Install Modul Mod PHP Apache"
 sudo apt install libapache2-mod-php8.2
 
 echo "===> Menambahkan repository MariaDB"
-curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | sudo bash
+curl -fsSL https://mariadb.org/mariadb_release_signing_key.asc | sudo gpg --dearmor -o /usr/share/keyrings/mariadb-keyring.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/mariadb-keyring.gpg] https://archive.mariadb.org/mariadb-10.11/repo/ubuntu $(lsb_release -cs) main" \
+sudo tee /etc/apt/sources.list.d/mariadb.list
+
 
 echo "===> Install MariaDB"
 apt update && apt install -y mariadb-server
+
+echo "===> Check mariaDB versions"
+mariadb --version
 
 echo "===> Membuat database untuk Moodle"
 DB_NAME="moodle"
