@@ -114,6 +114,8 @@ global \$CFG;
 
 require_once(__DIR__ . '/lib/setup.php');
 
+\$CFG->pathtophp = '/usr/bin/php';
+
 // There is no php closing tag in this file,
 EOF
 
