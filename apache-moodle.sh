@@ -122,13 +122,65 @@ EOF
 chown www-data:www-data /var/www/html/moodle/config.php
 chmod 640 /var/www/html/moodle/config.php
 
-echo "===> Selesai! Moodle siap digunakan tanpa setup awal melalui browser."
-echo "========================================"
-echo "Database Name : ${DB_NAME}"
-echo "Database User : ${DB_USER}"
-echo "Database Pass : ${DB_PASS}"
-echo "Moodle URL    : http://${SERVER_IP}"
-echo "========================================"
-echo "⚠️  Jika server memiliki domain atau IP publik berbeda, harap edit file berikut:"
-echo "   /var/www/html/moodle/config.php"
-echo "   dan ubah nilai \$CFG->wwwroot = 'http://${SERVER_IP}'; sesuai alamat yang benar."
+read -p "===> Apakah anda inggin install SSL? (yes/no): " SSL
+
+if [ "$SSL" == "yes" ]; then
+    apt update
+    apt install -y certbot python3-certbot-apache
+
+    read -p "Domain (contoh: example.com): " SSL_Domain
+    apachectl configtest && systemctl reload apache2
+    echo "===> Menjalankan certbot untuk domain ${SSL_Domain}"
+    certbot --apache -d "${SSL_Domain}" --non-interactive --agree-tos -m admin@${SSL_Domain} || {
+        echo "Certbot gagal, periksa log. Konfigurasi apache tetap terpasang."
+    }
+
+    echo "===> SSL selesai (atau perlu cek manual jika gagal)."
+
+    cat <<EOF > /var/www/html/moodle/config.php
+<?php  // Moodle configuration file
+
+unset(\$CFG);
+global \$CFG;
+\$CFG = new stdClass();
+=
+\$CFG->dbtype    = 'mariadb';
+\$CFG->dblibrary = 'native';
+\$CFG->dbhost    = 'localhost';
+\$CFG->dbname    = '${DB_NAME}';
+\$CFG->dbuser    = '${DB_USER}';
+\$CFG->dbpass    = '${DB_PASS}';
+\$CFG->prefix    = 'mdl_';
+\$CFG->dboptions = array (
+  'dbpersist' => 0,
+  'dbport' => 3306,
+  'dbsocket' => '',
+  'dbcollation' => 'utf8mb4_unicode_ci',
+);
+
+\$CFG->wwwroot   = 'https://${SSL_Domain}';
+\$CFG->dataroot  = '/var/www/html/moodledata';
+\$CFG->admin     = 'admin';
+
+\$CFG->directorypermissions = 0777;
+
+require_once(__DIR__ . '/lib/setup.php');
+
+\$CFG->sslproxy = true; 
+\$CFG->pathtophp = '/usr/bin/php';
+
+// There is no php closing tag in this file,
+EOF
+
+else
+    echo "===> Selesai! Moodle siap digunakan tanpa setup awal melalui browser."
+    echo "========================================"
+    echo "Database Name : ${DB_NAME}"
+    echo "Database User : ${DB_USER}"
+    echo "Database Pass : ${DB_PASS}"
+    echo "Moodle URL    : http://${SERVER_IP}"
+    echo "========================================"
+    echo "⚠️  Jika server memiliki domain atau IP publik berbeda, harap edit file berikut:"
+    echo "   /var/www/html/moodle/config.php atau /var/www/html/moodle/public/config.php"
+    echo "   dan ubah nilai \$CFG->wwwroot = 'http://${SERVER_IP}'; sesuai alamat yang benar."
+fi
