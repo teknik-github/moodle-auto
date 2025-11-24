@@ -18,6 +18,8 @@ apt update
 
 echo "===> Install PHP 8.2 dan ekstensi yang diperlukan Moodle"
 apt install -y php8.2 php8.2-{cli,fpm,common,gd,mbstring,mysql,xml,xmlrpc,soap,intl,zip,curl,opcache}
+# Pastikan extension Redis untuk PHP terpasang (menghindari Class "Redis" not found)
+apt install -y php8.2-redis || apt install -y php-redis || true
 
 echo "===> Install Modul Mod PHP Apache"
 sudo apt install libapache2-mod-php8.2
@@ -70,6 +72,7 @@ sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/moodle|' /etc/ap
 
 echo "===> Mengaktifkan mod_rewrite dan restart Apache"
 a2enmod rewrite
+a2enmod headers
 systemctl restart apache2
 
 echo "===> Menambahkan max_input_vars = 5000 ke php.ini"
@@ -137,13 +140,14 @@ if [ "$SSL" == "yes" ]; then
 
     echo "===> SSL selesai (atau perlu cek manual jika gagal)."
 
+    # Perbaikan: buat config.php tanpa typo "=" yang menyebabkan syntax error
     cat <<EOF > /var/www/html/moodle/config.php
 <?php  // Moodle configuration file
 
 unset(\$CFG);
 global \$CFG;
 \$CFG = new stdClass();
-=
+
 \$CFG->dbtype    = 'mariadb';
 \$CFG->dblibrary = 'native';
 \$CFG->dbhost    = 'localhost';
@@ -171,6 +175,13 @@ require_once(__DIR__ . '/lib/setup.php');
 
 // There is no php closing tag in this file,
 EOF
+
+    # Pastikan AllowOverride untuk /var/www diizinkan agar .htaccess Moodle dapat bekerja
+    if grep -q "AllowOverride None" /etc/apache2/apache2.conf; then
+        sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
+        echo "Updated /etc/apache2/apache2.conf: AllowOverride All"
+    fi
+    systemctl reload apache2 || systemctl restart apache2
 
 else
     echo "===> Selesai! Moodle siap digunakan tanpa setup awal melalui browser."
